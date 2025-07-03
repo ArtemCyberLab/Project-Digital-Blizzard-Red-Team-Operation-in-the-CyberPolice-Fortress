@@ -62,3 +62,49 @@ Use results to advance further into the CyberPolice network.
 
 Conclusion Part 1
 The first infiltration phase — reconnaissance and data gathering — revealed server defenses but identified a key entry point. The next step is detailed analysis and exploitation of this point while maintaining stealth.
+
+PART2  
+Today I performed reconnaissance on the web server at 10.10.0.29 to find accessible directories and files.
+
+1. Initial scan for common PHP files and directories
+I used a wordlist of common PHP files and directories. All requests returned 403 Forbidden, except the /vendor/ directory, which returned a 301 Redirect.
+
+ffuf -w common-php-files.txt -u http://10.10.0.29/FUZZ -mc 200,301,403
+Result:
+
+/vendor/ → 301 (redirect)
+
+Others → 403 (forbidden)
+
+2. Scanning common directories under root /
+I checked a list of common directories at the site root.
+
+Command:
+ffuf -w common-directories.txt -u http://10.10.0.29/FUZZ/ -mc 200,301,403
+Result:
+
+All returned 403 Forbidden, including /vendor/.
+
+3. Searching for files and directories under /en/ with extensions .php, .asp, .aspx
+I tried common filenames with different extensions in the /en/ directory:
+
+ffuf -w common-filenames.txt -u http://10.10.0.29/en/FUZZ.php -mc 200,301,403
+ffuf -w common-filenames.txt -u http://10.10.0.29/en/FUZZ.asp -mc 200,301,403
+ffuf -w common-filenames.txt -u http://10.10.0.29/en/FUZZ.aspx -mc 200,301,403
+Result:
+
+All requests either returned 403 Forbidden or no response.
+
+4. Connection refused on port 80
+When trying to connect to HTTP on port 80, I encountered an error:
+
+curl http://10.10.0.29
+Response: connection refused — indicates the service is not running on this port or it is blocked.
+
+5. Next steps
+Run a port scan with nmap to identify active services:
+
+nmap -sC -sV -p- 10.10.0.29
+After finding the open port with the web server, repeat the directory search on the correct port.
+
+Use more comprehensive wordlists and different bypass methods for access restrictions.
